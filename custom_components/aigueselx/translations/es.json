@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Aigües d'Elx",
+        "description": "Introduce las credenciales de tu cuenta de Aigües d'Elx.",
+        "data": {
+          "usuario": "Usuario",
+          "password": "Contraseña"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar Aigües d'Elx",
+        "description": "Introduce las nuevas credenciales.",
+        "data": {
+          "usuario": "Usuario",
+          "password": "Contraseña"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Usuario o contraseña incorrectos."
+    },
+    "abort": {
+      "already_configured": "La integración ya está configurada.",
+      "reconfigure_successful": "Credenciales de Aigües d'Elx actualizadas correctamente."
+    }
+  }
+}

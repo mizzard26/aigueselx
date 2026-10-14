@@ -1,0 +1,11 @@
+{
+  "domain": "aigueselx",
+  "name": "Aigües d'Elx",
+  "version": "1.0.0",
+  "documentation": "https://github.com/mizzard26/aigueselx",
+  "issue_tracker": "https://github.com/mizzard26/aigueselx/issues",
+  "codeowners": ["@mizzard26"],
+  "config_flow": true,
+  "iot_class": "cloud_polling",
+  "requirements": []
+}

@@ -1,0 +1,31 @@
+# Changelog
+
+Todas las versiones notables de este proyecto se documentan en este archivo.
+
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
+y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
+
+## \[1.0.0] - 2026-10-14
+
+### Añadido
+
+* Versión inicial de la integración.
+* Login contra el portal de Aigües d'Elx (scraping con cookies + `p\_auth`).
+* Descarga del consumo horario de los últimos 3 días.
+* Importación como estadísticas externas de Home Assistant
+(`aigueselx:consumo\_agua\_horario`).
+* Botón para cargar el histórico completo por intervalos de 90 días.
+* Reintentos de login al arrancar (3 intentos con 60s entre ellos).
+* `retry\_after=300` para reintentos silenciosos tras un fallo.
+* Ciclo de actualización automática cada 6h.
+* Si falla un ciclo y hay datos previos, mantiene el último valor bueno.
+* Iconos propios (`brand/icon.png`, `brand/logo.png`).
+* Traducciones al español (`translations/es.json`).
+
+### Notas
+
+* El portal de Aigües d'Elx no dispone de API pública. La integración
+hace scraping del portal autenticado.
+* El portal devuelve errores 404 de forma intermitente; la integración
+los tolera y reintenta cada 5 minutos.
+

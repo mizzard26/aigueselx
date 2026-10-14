@@ -1,4 +1,6 @@
-<img src="assets/logo.png" alt="Aigües d'Elx" width="200">
+<p align="center">
+  <img src="assets/logo.png" alt="Aigües d'Elx" width="200">
+</p>
 
 # Aigües d'Elx para Home Assistant
 

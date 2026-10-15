@@ -45,7 +45,7 @@ MESES = {
 
 # Configuración del backoff
 MAX_REINTENTOS_RAPIDOS = 4
-RETRY_RAPIDO_SEGUNDOS = 300           # 5 min
+RETRY_RAPIDO_SEGUNDOS = 300             # 5 min
 RETRY_CICLO_NORMAL_SEGUNDOS = 6 * 3600  # 6 h
 DESFASE_MAXIMO_DATO = timedelta(hours=14)
 
@@ -101,7 +101,7 @@ class AigueselxCoordinator(DataUpdateCoordinator):
 
             # Comprobar que el dato más reciente es suficientemente
             # fresco. Si no, tratamos el ciclo como fallido para
-            # forzar un reintento con retry_after.
+            # forzar un reintento.
             if ultima_hora is None:
                 raise RuntimeError("El portal no ha devuelto datos.")
 
@@ -129,8 +129,11 @@ class AigueselxCoordinator(DataUpdateCoordinator):
                 ultima_hora.isoformat(),
             )
 
-            # Éxito: reseteamos el contador de reintentos.
+            # Éxito: reseteamos contador y volvemos al ciclo normal.
             self._fallos_consecutivos = 0
+            self.update_interval = timedelta(
+                seconds=RETRY_CICLO_NORMAL_SEGUNDOS
+            )
 
             return {
                 "horario": datos_horarios,
@@ -143,7 +146,9 @@ class AigueselxCoordinator(DataUpdateCoordinator):
             self._fallos_consecutivos += 1
 
             if self._fallos_consecutivos <= MAX_REINTENTOS_RAPIDOS:
-                retry = RETRY_RAPIDO_SEGUNDOS
+                self.update_interval = timedelta(
+                    seconds=RETRY_RAPIDO_SEGUNDOS
+                )
                 _LOGGER.warning(
                     "Aigües d'Elx: ciclo fallido (%s). "
                     "Reintento %s/%s en 5 minutos.",
@@ -152,7 +157,9 @@ class AigueselxCoordinator(DataUpdateCoordinator):
                     MAX_REINTENTOS_RAPIDOS,
                 )
             else:
-                retry = RETRY_CICLO_NORMAL_SEGUNDOS
+                self.update_interval = timedelta(
+                    seconds=RETRY_CICLO_NORMAL_SEGUNDOS
+                )
                 _LOGGER.warning(
                     "Aigües d'Elx: ciclo fallido (%s). "
                     "Se han agotado los reintentos rápidos; "
@@ -161,8 +168,7 @@ class AigueselxCoordinator(DataUpdateCoordinator):
                 )
 
             raise UpdateFailed(
-                f"No se han podido actualizar los datos: {err}",
-                retry_after=retry,
+                f"No se han podido actualizar los datos: {err}"
             ) from err
 
     def _ultima_hora(

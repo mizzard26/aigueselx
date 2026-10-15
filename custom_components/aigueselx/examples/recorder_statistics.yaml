@@ -1,0 +1,211 @@
+# ============================================================
+# RECORDER STATISTICS · ESTADÍSTICAS HISTÓRICAS
+# ============================================================
+# Plantillas basadas en datos históricos del Recorder de HA.
+# Separado de sensors.yaml y binary_sensors.yaml para facilitar
+# el mantenimiento y la ampliación futura.
+#
+# ESTRUCTURA:
+#   - Agua: consumo diario y media de los últimos 7 días.
+#   - Futuro: añadir aquí otros cálculos basados en estadísticas
+#     históricas, agrupados por familia de sensores.
+#
+# FUENTE:
+#   - aigueselx:consumo_agua_horario
+#
+# NOTAS:
+#   - No modifica la integración Aigües d'Elx ni sus estadísticas.
+#   - Los consumos se calculan a partir de diferencias de sumas.
+#   - La media utiliza los últimos 7 días completos disponibles.
+# ============================================================
+
+- triggers:
+    - trigger: homeassistant
+      event: start
+
+    - trigger: state
+      entity_id: sensor.consumo_agua_horario
+      attribute: actualizado
+      for: "00:00:30"
+
+  actions:
+    - action: recorder.get_statistics
+      data:
+        start_time: "{{ (today_at() - timedelta(days=8)).isoformat() }}"
+        end_time: "{{ today_at().isoformat() }}"
+        statistic_ids:
+          - "aigueselx:consumo_agua_horario"
+        period: day
+        types:
+          - sum
+      response_variable: agua_stats
+
+  sensor:
+
+    # --------------------------------------------------------
+    # AGUA · ÚLTIMO DÍA COMPLETO
+    # --------------------------------------------------------
+    - name: "Consumo agua último día completo"
+      unique_id: consumo_agua_ultimo_dia_completo
+      default_entity_id: sensor.consumo_agua_ultimo_dia_completo
+      icon: mdi:calendar-today
+      unit_of_measurement: "L"
+      state_class: measurement
+      state: >
+        {% set filas = agua_stats.statistics.get('aigueselx:consumo_agua_horario', []) | sort(attribute='end') %}
+        {% set ahora = now() %}
+        {% set ns = namespace(cierres=[]) %}
+        {% for fila in filas %}
+          {% if fila.get('end') is not none and fila.get('sum') is not none %}
+            {% set end_dt = as_local(as_datetime(fila['end'])) %}
+            {% if end_dt <= ahora %}
+              {% set ns.cierres = ns.cierres + [(end_dt, fila['sum'] | float)] %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if ns.cierres | length >= 2 %}
+          {% set ultimo = ns.cierres[-1][1] %}
+          {% set anterior = ns.cierres[-2][1] %}
+          {{ ((ultimo - anterior) * 1000) | round(0) }}
+        {% else %}
+          {{ this.state if is_number(this.state) else 'unavailable' }}
+        {% endif %}
+      attributes:
+        fecha_dato: >
+          {% set filas = agua_stats.statistics.get('aigueselx:consumo_agua_horario', []) | sort(attribute='end') %}
+          {% set ahora = now() %}
+          {% set ns = namespace(cierres=[]) %}
+          {% for fila in filas %}
+            {% if fila.get('end') is not none and fila.get('sum') is not none %}
+              {% set end_dt = as_local(as_datetime(fila['end'])) %}
+              {% if end_dt <= ahora %}
+                {% set ns.cierres = ns.cierres + [(end_dt, fila['sum'] | float)] %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {% if ns.cierres | length >= 1 %}
+            {{ (ns.cierres[-1][0] - timedelta(days=1)).strftime('%d/%m/%Y') }}
+          {% else %}
+            --
+          {% endif %}
+
+    # --------------------------------------------------------
+    # AGUA · MEDIA DIARIA DE LOS ÚLTIMOS 7 DÍAS COMPLETOS
+    # --------------------------------------------------------
+    - name: "Consumo agua media últimos 7 días"
+      unique_id: consumo_agua_media_ultimos_7_dias
+      default_entity_id: sensor.consumo_agua_media_ultimos_7_dias
+      icon: mdi:chart-line
+      unit_of_measurement: "L/día"
+      state_class: measurement
+      state: >
+        {% set filas = agua_stats.statistics.get('aigueselx:consumo_agua_horario', []) | sort(attribute='end') %}
+        {% set ns = namespace(consumos=[]) %}
+        {% for fila in filas %}
+          {% if fila.get('end') is not none and fila.get('sum') is not none %}
+            {% set fin = as_local(as_datetime(fila['end'])) %}
+            {% set limite = today_at() %}
+            {% if fin <= limite %}
+              {% set ns.consumos = ns.consumos + [fila] %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if ns.consumos | length >= 8 %}
+          {% set filas = ns.consumos[-8:] %}
+          {% set ns2 = namespace(total=0) %}
+          {% for i in range(1, 8) %}
+            {% set ns2.total = ns2.total + (filas[i]['sum'] | float - filas[i-1]['sum'] | float) * 1000 %}
+          {% endfor %}
+          {{ (ns2.total / 7) | round(0) }}
+        {% else %}
+          {{ this.state if is_number(this.state) else 'unavailable' }}
+        {% endif %}
+
+
+# ============================================================
+# AGUA · DETECCIÓN DE CONSUMO NOCTURNO CONTINUADO
+# ============================================================
+# OBJETIVO:
+#   Detectar consumo persistente entre las 02:00 y las 06:00.
+#
+# CRITERIO:
+#   - Consumo superior a cero en cada una de las cuatro horas.
+#   - Distingue entre consumo continuado, interrumpido y falta
+#     de información.
+#   - Un único sensor para facilitar la gestión desde Lovelace.
+#   - Sensor de prueba, sin notificaciones.
+#
+# FUENTE:
+#   - aigueselx:consumo_agua_horario
+# ============================================================
+
+- triggers:
+    - trigger: homeassistant
+      event: start
+
+    - trigger: state
+      entity_id: sensor.consumo_agua_horario
+      attribute: actualizado
+      for: "00:00:30"
+
+  actions:
+    - action: recorder.get_statistics
+      data:
+        start_time: "{{ (today_at('02:00') - timedelta(days=1)).isoformat() }}"
+        end_time: "{{ now().isoformat() }}"
+        statistic_ids:
+          - "aigueselx:consumo_agua_horario"
+        period: hour
+        types:
+          - state
+      response_variable: agua_nocturna_stats
+
+  sensor:
+    - name: "Estado consumo agua nocturno"
+      unique_id: estado_consumo_agua_nocturno
+      default_entity_id: sensor.estado_consumo_agua_nocturno
+      icon: mdi:information-outline
+      state: >
+        {% set objetivo = today_at('02:00') if now() >= today_at('06:00') else today_at('02:00') - timedelta(days=1) %}
+        {% set filas = agua_nocturna_stats.statistics.get('aigueselx:consumo_agua_horario', []) %}
+        {% set ns = namespace(h2=none, h3=none, h4=none, h5=none) %}
+        {% for fila in filas %}
+          {% if fila.get('start') is not none and fila.get('state') is not none %}
+            {% set inicio = as_local(as_datetime(fila['start'])) %}
+            {% if inicio.minute == 0 and inicio >= objetivo and inicio < objetivo + timedelta(hours=4) %}
+              {% if inicio.hour == 2 %}
+                {% set ns.h2 = fila['state'] | float(0) %}
+              {% elif inicio.hour == 3 %}
+                {% set ns.h3 = fila['state'] | float(0) %}
+              {% elif inicio.hour == 4 %}
+                {% set ns.h4 = fila['state'] | float(0) %}
+              {% elif inicio.hour == 5 %}
+                {% set ns.h5 = fila['state'] | float(0) %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if ns.h2 is none or ns.h3 is none or ns.h4 is none or ns.h5 is none %}
+          Falta información
+        {% elif ns.h2 > 0 and ns.h3 > 0 and ns.h4 > 0 and ns.h5 > 0 %}
+          Consumo continuado
+        {% else %}
+          Sin consumo persistente
+        {% endif %}
+      attributes:
+        fecha_dato: >
+          {% set objetivo = today_at('02:00') if now() >= today_at('06:00') else today_at('02:00') - timedelta(days=1) %}
+          {{ objetivo.strftime('%d/%m/%Y') }}
+
+# ============================================================
+# FUTURAS ESTADÍSTICAS
+# ============================================================
+# Para añadir otra familia:
+#   1. Incorporar sus statistic_ids a la acción correspondiente.
+#   2. Crear sus sensores dentro del bloque sensor.
+#   3. Si necesita otra frecuencia o ventana temporal, valorar
+#      un bloque independiente de triggers/actions.
+#
+# Evitar duplicar consultas si varios sensores pueden compartir
+# la misma respuesta de recorder.get_statistics.
+# ============================================================

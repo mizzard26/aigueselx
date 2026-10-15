@@ -43,6 +43,12 @@ MESES = {
     "dic": 12,
 }
 
+# Configuración del backoff
+MAX_REINTENTOS_RAPIDOS = 4
+RETRY_RAPIDO_SEGUNDOS = 300           # 5 min
+RETRY_CICLO_NORMAL_SEGUNDOS = 6 * 3600  # 6 h
+DESFASE_MAXIMO_DATO = timedelta(hours=14)
+
 
 class AigueselxCoordinator(DataUpdateCoordinator):
     """Coordinar las actualizaciones de Aigües d'Elx."""
@@ -60,6 +66,8 @@ class AigueselxCoordinator(DataUpdateCoordinator):
         self.historico_registros_horarios = 0
         self.historico_registros_diarios = 0
         self.historico_ultimo_resultado = ""
+        self.ultima_consulta: datetime | None = None
+        self._fallos_consecutivos = 0
 
         super().__init__(
             hass,
@@ -70,6 +78,8 @@ class AigueselxCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict:
         """Actualizar los últimos tres días sin importar otras estadísticas."""
+        self.ultima_consulta = dt_util.now()
+
         try:
             ahora = dt_util.now()
             fecha_inicio = (
@@ -87,23 +97,40 @@ class AigueselxCoordinator(DataUpdateCoordinator):
                 fecha_fin,
             )
 
+            ultima_hora = self._ultima_hora(datos_horarios)
+
+            # Comprobar que el dato más reciente es suficientemente
+            # fresco. Si no, tratamos el ciclo como fallido para
+            # forzar un reintento con retry_after.
+            if ultima_hora is None:
+                raise RuntimeError("El portal no ha devuelto datos.")
+
+            desfase = ahora - ultima_hora
+            if desfase > DESFASE_MAXIMO_DATO:
+                raise RuntimeError(
+                    f"Datos desactualizados: último registro "
+                    f"{ultima_hora.isoformat()} (desfase {desfase})."
+                )
+
             self._importar_estadisticas(
                 datos_horarios,
                 STATISTIC_ID_HORARIO,
                 "Consumo agua horario",
             )
 
-            # Calcular la hora del último dato disponible.
-            ultima_hora = self._ultima_hora(datos_horarios)
-
             actualizado = dt_util.now()
 
             _LOGGER.debug(
                 "Aigües d'Elx: %s registros horarios y %s diarios "
-                "consultados en la actualización automática",
+                "consultados en la actualización automática. "
+                "Último registro: %s",
                 len(datos_horarios),
                 len(datos_diarios),
+                ultima_hora.isoformat(),
             )
+
+            # Éxito: reseteamos el contador de reintentos.
+            self._fallos_consecutivos = 0
 
             return {
                 "horario": datos_horarios,
@@ -113,21 +140,29 @@ class AigueselxCoordinator(DataUpdateCoordinator):
             }
 
         except Exception as err:
-            # Si ya tenemos datos previos, no rompemos el sensor:
-            # mantenemos los datos anteriores y reintentamos en 5 min.
-            if self.data is not None:
+            self._fallos_consecutivos += 1
+
+            if self._fallos_consecutivos <= MAX_REINTENTOS_RAPIDOS:
+                retry = RETRY_RAPIDO_SEGUNDOS
                 _LOGGER.warning(
-                    "Aigües d'Elx: fallo en la actualización (%s). "
-                    "Se mantienen los datos anteriores y se "
-                    "reintentará en 5 minutos.",
+                    "Aigües d'Elx: ciclo fallido (%s). "
+                    "Reintento %s/%s en 5 minutos.",
+                    err,
+                    self._fallos_consecutivos,
+                    MAX_REINTENTOS_RAPIDOS,
+                )
+            else:
+                retry = RETRY_CICLO_NORMAL_SEGUNDOS
+                _LOGGER.warning(
+                    "Aigües d'Elx: ciclo fallido (%s). "
+                    "Se han agotado los reintentos rápidos; "
+                    "se esperará al siguiente ciclo de 6h.",
                     err,
                 )
-                return self.data
 
-            # Primer refresh sin datos previos: sí lanzamos el fallo.
             raise UpdateFailed(
                 f"No se han podido actualizar los datos: {err}",
-                retry_after=300,
+                retry_after=retry,
             ) from err
 
     def _ultima_hora(

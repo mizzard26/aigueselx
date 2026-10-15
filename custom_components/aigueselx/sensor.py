@@ -88,6 +88,7 @@ class AigueselxSensorHorario(CoordinatorEntity, SensorEntity):
         registro = registros[0] if registros else {}
 
         actualizado = datos.get("actualizado")
+        ultima_consulta = self.coordinator.ultima_consulta
 
         return {
             "statistic_id": STATISTIC_ID_HORARIO,
@@ -95,6 +96,11 @@ class AigueselxSensorHorario(CoordinatorEntity, SensorEntity):
             "actualizado": (
                 actualizado.isoformat()
                 if actualizado is not None
+                else None
+            ),
+            "ultima_consulta": (
+                ultima_consulta.isoformat()
+                if ultima_consulta is not None
                 else None
             ),
         }

@@ -68,6 +68,7 @@ class AigueselxCoordinator(DataUpdateCoordinator):
         self.historico_ultimo_resultado = ""
         self.ultima_consulta: datetime | None = None
         self._fallos_consecutivos = 0
+        self._ultimo_inicio_ciclo: datetime | None = None
 
         super().__init__(
             hass,
@@ -78,10 +79,32 @@ class AigueselxCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict:
         """Actualizar los últimos tres días sin importar otras estadísticas."""
-        self.ultima_consulta = dt_util.now()
+        ahora = dt_util.now()
+        self.ultima_consulta = ahora
+
+        # Resetear contador si ha pasado un ciclo completo (>= 6h)
+        # desde el último inicio de ciclo. Así cada ciclo nuevo
+        # vuelve a disponer de sus 4 reintentos rápidos.
+        if (
+            self._ultimo_inicio_ciclo is None
+            or ahora - self._ultimo_inicio_ciclo
+            >= timedelta(hours=6)
+        ):
+            self._fallos_consecutivos = 0
+            self._ultimo_inicio_ciclo = ahora
 
         try:
-            ahora = dt_util.now()
+            # Refrescar sesión antes de cada consulta. El portal
+            # invalida la sesión por inactividad en unos minutos,
+            # por lo que el login hecho al arrancar HA ya no vale
+            # 6 horas después. Hacer login aquí garantiza una
+            # sesión fresca justo antes de consultar consumos.
+            if not await self.api.async_login():
+                raise RuntimeError(
+                    "No se pudo iniciar sesión antes de consultar "
+                    "los consumos."
+                )
+
             fecha_inicio = (
                 ahora - timedelta(days=2)
             ).strftime("%d/%m/%Y")
@@ -99,9 +122,6 @@ class AigueselxCoordinator(DataUpdateCoordinator):
 
             ultima_hora = self._ultima_hora(datos_horarios)
 
-            # Comprobar que el dato más reciente es suficientemente
-            # fresco. Si no, tratamos el ciclo como fallido para
-            # forzar un reintento.
             if ultima_hora is None:
                 raise RuntimeError("El portal no ha devuelto datos.")
 
@@ -167,6 +187,17 @@ class AigueselxCoordinator(DataUpdateCoordinator):
                     err,
                 )
 
+            # Si es el primer fallo y no había datos previos,
+            # publicamos un placeholder para que el sensor no
+            # quede en unavailable.
+            if self.data is None:
+                self.data = {
+                    "horario": [],
+                    "diario": [],
+                    "actualizado": None,
+                    "ultima_hora": None,
+                }
+
             raise UpdateFailed(
                 f"No se han podido actualizar los datos: {err}"
             ) from err
@@ -204,6 +235,13 @@ class AigueselxCoordinator(DataUpdateCoordinator):
             numero_intervalo = 0
 
             try:
+                # Login inicial para la carga del histórico.
+                if not await self.api.async_login():
+                    raise RuntimeError(
+                        "No se pudo iniciar sesión antes de cargar "
+                        "el histórico."
+                    )
+
                 while intervalos_vacios < 2:
                     fecha_inicio = fecha_fin - timedelta(days=89)
                     inicio_texto = fecha_inicio.strftime("%d/%m/%Y")

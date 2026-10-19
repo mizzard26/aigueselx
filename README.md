@@ -286,3 +286,22 @@ custom_fields:
           </div>
         </div>`;
     ]]]
+```
+## Preguntas frecuentes (FAQ)
+
+**¿Por qué el sensor nocturno a veces muestra una fecha anterior a hoy?**
+Porque busca la última noche completa (02:00–06:00) disponible. Si el portal todavía no ha publicado los datos de esta madrugada, muestra la noche anterior. La fecha que aparece al lado (fecha_dato) siempre coincide con la noche analizada.
+
+**¿Por qué el consumo del último día a veces no es el de ayer?**
+Porque solo muestra días cerrados (24 horas completas). Si el portal no ha publicado aún el día de ayer, mostrará el último día completo disponible.
+
+**¿El portal a veces da error 404?**
+Sí, es inestable. La integración está preparada para reintentar automáticamente hasta 4 veces cada 5 minutos si esto ocurre.
+
+## Créditos
+
+Desarrollado por [@mizzard26](https://github.com/mizzard26).
+
+## Licencia
+
+MIT

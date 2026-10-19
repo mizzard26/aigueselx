@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Aigües d'Elx" width="200">
+  <img src="./assets/logo.png" alt="Aigües d'Elx" width="200">
 </p>
 
 # Aigües d'Elx para Home Assistant
@@ -55,7 +55,7 @@ Para que el consumo de agua se muestre en el **Panel de Energía** de HA y pueda
 
 *Nota: estos sensores no los da la integración, se calculan a partir de las estadísticas de la misma.*
 
-1. Copia el contenido de [`examples/recorder_statistics.yaml`](examples/recorder_statistics.yaml).
+1. Copia el contenido de [`examples/recorder_statistics.yaml`](https://github.com/mizzard26/aigueselx/blob/main/examples/recorder_statistics.yaml).
 2. Pégalo en tu archivo `config/recorder_statistics.yaml` (o inclúyelo desde tu `configuration.yaml`).
 3. Reinicia Home Assistant.
 
@@ -66,10 +66,22 @@ Este archivo crea los siguientes sensores:
 
 ---
 
+## Panel de energía (opcional)
+
+<p align="center">
+  <img src="https://github.com/mizzard26/aigueselx/blob/main/assets/energy.png?raw=true" alt="Panel de energía" width="600">
+</p>
+
+Para añadir el consumo de agua al panel de energía de Home Assistant:
+1. Ve a **Ajustes → Paneles → Energía**.
+2. En la sección de **Agua**, añade `aigueselx:consumo_agua_horario` como fuente de datos.
+
+---
+
 ## Tarjeta de Lovelace (opcional)
 
 <p align="center">
-  <img src="assets/card.png" alt="Tarjeta de consumo de agua" width="350">
+  <img src="https://github.com/mizzard26/aigueselx/blob/main/assets/card.png?raw=true" alt="Tarjeta de consumo de agua" width="350">
 </p>
 
 Puedes usar esta tarjeta (`custom:button-card`) para tener un resumen visual de tu consumo y detectar posibles fugas de forma rápida.

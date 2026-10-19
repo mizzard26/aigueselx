@@ -2,15 +2,29 @@
   <img src="./assets/logo.png" alt="Aigües d'Elx" width="200">
 </p>
 
-# Aigües d'Elx para Home Assistant
+<h1 align="center">Aigües d'Elx para Home Assistant</h1>
 
-Integración custom de Home Assistant para leer el consumo de agua del portal
-[aigueselx.com](https://www.aigueselx.com/), que no dispone de API pública.
+<p align="center">
+  <img src="https://img.shields.io/badge/HA-2024.1%2B-blue?style=for-the-badge&logo=home-assistant" alt="Home Assistant">
+  <img src="https://img.shields.io/badge/HACS-Custom-orange?style=for-the-badge" alt="HACS">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License">
+</p>
+
+<p align="center">
+  Integración custom de Home Assistant para leer el consumo de agua del portal
+  <a href="https://www.aigueselx.com/">aigueselx.com</a>, que no dispone de API pública.
+</p>
+
+---
 
 La integración hace scraping autenticado del portal (login con cookies +
 token `p_auth`), descarga el consumo horario y lo importa como **estadísticas
 externas** de Home Assistant, para que aparezcan en el panel de energía y en
 las estadísticas de largo plazo.
+
+<p align="center">
+  <img src="https://github.com/mizzard26/aigueselx/blob/main/assets/integration.png?raw=true" alt="Integración en HA" width="600">
+</p>
 
 ## Características
 

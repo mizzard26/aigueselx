@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./assets/logo.png" alt="Aigües d'Elx" width="200">
+  <img src="https://raw.githubusercontent.com/mizzard26/aigueselx/main/assets/logo.png" alt="Aigües d'Elx" width="200">
 </p>
 
 <h1 align="center">Aigües d'Elx para Home Assistant</h1>
@@ -23,7 +23,7 @@ externas** de Home Assistant, para que aparezcan en el panel de energía y en
 las estadísticas de largo plazo.
 
 <p align="center">
-  <img src="https://github.com/mizzard26/aigueselx/blob/main/assets/integration.png?raw=true" alt="Integración en HA" width="600">
+  <img src="https://raw.githubusercontent.com/mizzard26/aigueselx/main/assets/integration.png" alt="Integración en HA" width="600">
 </p>
 
 ## Características
@@ -83,7 +83,7 @@ Este archivo crea los siguientes sensores:
 ## Panel de energía (opcional)
 
 <p align="center">
-  <img src="https://github.com/mizzard26/aigueselx/blob/main/assets/energy.png?raw=true" alt="Panel de energía" width="600">
+  <img src="https://raw.githubusercontent.com/mizzard26/aigueselx/main/assets/energy.png" alt="Panel de energía" width="600">
 </p>
 
 Para añadir el consumo de agua al panel de energía de Home Assistant:
@@ -95,7 +95,7 @@ Para añadir el consumo de agua al panel de energía de Home Assistant:
 ## Tarjeta de Lovelace (opcional)
 
 <p align="center">
-  <img src="https://github.com/mizzard26/aigueselx/blob/main/assets/card.png?raw=true" alt="Tarjeta de consumo de agua" width="350">
+  <img src="https://raw.githubusercontent.com/mizzard26/aigueselx/main/assets/card.png" alt="Tarjeta de consumo de agua" width="350">
 </p>
 
 Puedes usar esta tarjeta (`custom:button-card`) para tener un resumen visual de tu consumo y detectar posibles fugas de forma rápida.

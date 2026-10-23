@@ -169,7 +169,7 @@ class AigueselxCoordinator(DataUpdateCoordinator):
                 self.update_interval = timedelta(
                     seconds=RETRY_RAPIDO_SEGUNDOS
                 )
-                _LOGGER.warning(
+                _LOGGER.info(
                     "Aigües d'Elx: ciclo fallido (%s). "
                     "Reintento %s/%s en 5 minutos.",
                     err,

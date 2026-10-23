@@ -5,6 +5,12 @@ Todas las versiones notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.0.2] - 2026-10-23
+
+### Cambiado
+
+- Los reintentos intermedios del coordinator ahora usan nivel `info` en lugar de `warning`. Los fallos puntuales que se recuperan solos (reintentos 1 a 4) ya no ensucian el log de Home Assistant. Solo se muestra un `warning` si se agotan los reintentos y hay que esperar al siguiente ciclo de 6 horas.
+
 ## [1.0.1] - 2026-10-19
 
 ### Corregido

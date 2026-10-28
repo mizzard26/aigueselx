@@ -5,6 +5,12 @@ Todas las versiones notables de este proyecto se documentan en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
 y este proyecto sigue [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.0.3] - 2026-10-28
+
+### Corregido
+
+- Cierre de la sesión HTTP en todos los caminos de fallo de `async_login`. Elimina los avisos `Unclosed client session` y `Unclosed connector` en el log de Home Assistant al recargar la integración.
+
 ## [1.0.2] - 2026-10-23
 
 ### Cambiado

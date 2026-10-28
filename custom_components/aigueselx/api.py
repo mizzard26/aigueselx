@@ -57,6 +57,7 @@ class AigueselxApi:
                         "Aigües d'Elx: etapa 1 fallida, HTTP %s",
                         response.status,
                     )
+                    await self.async_close()
                     return False
 
                 html = await response.text()
@@ -71,6 +72,7 @@ class AigueselxApi:
                         "Aigües d'Elx: etapa 2 fallida, "
                         "formulario no encontrado"
                     )
+                    await self.async_close()
                     return False
 
                 action = urljoin(
@@ -135,6 +137,7 @@ class AigueselxApi:
                         "error" in texto or "incorrect" in texto,
                         "captcha" in texto,
                     )
+                    await self.async_close()
                     return False
 
                 referer = url_final
@@ -154,6 +157,7 @@ class AigueselxApi:
                         "Aigües d'Elx: etapa 4 fallida, HTTP %s",
                         response.status,
                     )
+                    await self.async_close()
                     return False
 
                 html = await response.text()
@@ -163,6 +167,7 @@ class AigueselxApi:
                 _LOGGER.error(
                     "Aigües d'Elx: etapa 5 fallida, p_auth no encontrado"
                 )
+                await self.async_close()
                 return False
 
             _LOGGER.warning(
@@ -172,6 +177,7 @@ class AigueselxApi:
 
         except (aiohttp.ClientError, TimeoutError):
             _LOGGER.exception("Aigües d'Elx: error de conexión")
+            await self.async_close()
             return False
 
     async def async_get_consumo_horario(
